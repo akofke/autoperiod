@@ -13,8 +13,10 @@ from six.moves import range
 
 
 def main():
-    # values = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 3] * 100, np.float)
-    # times = np.arange(1, 1001, dtype=np.float)
+    # values = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3] * 100, np.float)
+    # values = values / np.max(values)
+    # values = 1 - values
+    # times = np.arange(1, values.size + 1, dtype=np.float)
 
     # data = np.genfromtxt('test_data.csv', delimiter=',', converters={0: read_date}, dtype=[('f0', 'O'), ('f1', '<f8')])
 
@@ -25,6 +27,8 @@ def main():
     values = np.interp(times_interp, times, values)
     times = times_interp
 
+    plt.plot(times, values)
+    plt.show()
 
     # times = process_dates(data)
     # values = data['f1']
@@ -39,7 +43,8 @@ def main():
     autocorr = autocorr[autocorr.size//2:]
     print(values.size)
     print(autocorr.size)
-    validate_hint(9500, autocorr, times)
+    periods = 1 / freq
+    validate_hint(41, autocorr, periods, times)
 
     plt.subplot(311)
     plt.plot(freq, pwr)
@@ -52,31 +57,98 @@ def main():
 
     plt.show()
 
-def validate_hint(period, acf, times):
-    search_min, search_max = get_acf_search_range(period, times)
+def get_period_hints(times, values):
+    permutations = 100
+    max_powers = []
+    periods = []
+
+    sequence = np.stack((times, values), axis=-1)
+
+    for _ in range(permutations):
+        p = np.random.permutation(sequence)
+        freq, power = LombScargle(sequence[:,0], sequence[:,1]).autopower()
+        max_powers.append(np.max(power))
+
+    max_powers.sort()
+    power_threshold = max_powers[int(len(max_powers) * .99)]
+
+    freq, power = LombScargle(times, values).autopower()
+
+    for i, p in enumerate(1 / freq):
+        if power[i] > power_threshold:
+            periods.append((i, p))
+
+
+
+def validate_hint(period_idx, acf, periods, times, show=True):
+    search_min, search_max = get_acf_search_range(period_idx, periods, times)
 
     print(search_min)
     print(search_max)
     print("++++")
-    for t in range(search_min, search_max):
-        slope1, _, _, _, stderr1 = linregress(times[search_min:t+1], acf[search_min:t+1])
-        slope2, _, _, _, stderr2 = linregress(times[t+1:search_max], acf[t+1:search_max])
-        print(t)
-        print("-")
-        print(slope1)
-        print(stderr1)
-        print("--")
-        print(slope2)
-        print(stderr2)
-        print("=====")
 
+    min_err = float("inf")
+    t_split = None
+    for t in range(search_min + 1, search_max):
+        seg1_x = times[search_min:t+1]
+        seg1_y = acf[search_min:t+1]
+        seg2_x = times[t+1:search_max+1]
+        seg2_y = acf[t+1:search_max+1]
 
-def get_acf_search_range(period, periods, times):
-    n = times.size
-    k = 1 / (period / n)
-    min_period = 0.5 * ((n / (k + 1)) + (n / k)) - 1
-    max_period = 0.5 * ((n / k) + (n / (k - 1))) + 1
+        slope1, c1, _, _, stderr1 = linregress(seg1_x, seg1_y)
+        slope2, c2, _, _, stderr2 = linregress(seg2_x, seg2_y)
+
+        print("err1: {}".format(stderr1))
+        print("err2: {}".format(stderr2))
+        print("sum: {}".format(stderr1 + stderr2))
+        print("min: {}".format(min_err))
+
+        if stderr1 + stderr2 < min_err and seg1_x.size > 2 and seg2_x.size > 2:
+            min_err = stderr1 + stderr2
+            t_split = t
+            min_slope1 = slope1
+            min_slope2 = slope2
+            min_c1 = c1
+            min_c2 = c2
+            print("<<<<<<<<<")
+            print(stderr1)
+            print(stderr2)
+            print(min_err)
+            print(seg1_x.size)
+            print(seg2_x.size)
+            print(">>>>>>>>>>>")
+
+        if show:
+            print(t)
+            print("-")
+            print(slope1)
+            print(stderr1)
+            print("--")
+            print(slope2)
+            print(stderr2)
+            print("=====")
+            plt.plot(times, acf)
+            plt.plot(times[search_min:t+1], c1 + slope1 * times[search_min:t+1], 'r')
+            plt.plot(times[t+1:search_max], c2 + slope2 * times[t+1:search_max], 'r')
+            plt.scatter(times[t], acf[t], c='g')
+            plt.show()
+
+    print(t_split)
+    print(times[t_split])
+    plt.scatter(times, acf, s=2)
+    plt.plot(times[search_min:t_split+1], min_c1 + min_slope1 * times[search_min:t_split+1], 'r')
+    plt.plot(times[t_split+1:search_max], min_c2 + min_slope2 * times[t_split+1:search_max], 'r')
+    plt.scatter(times[t_split], acf[t_split], c='g')
+    plt.show()
+
+def get_acf_search_range(period_index, periods, times):
+    min_period = 0.5 * (periods[period_index + 1] + periods[period_index + 2])
+    max_period = 0.5 * (periods[period_index - 1] + periods[period_index - 2])
+
     return closest_index(min_period, times), closest_index(max_period, times)
+
+
+
 
 
 def closest_index(value, arr):
