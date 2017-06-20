@@ -19,10 +19,6 @@ def main():
     times, values = load_google_trends_csv("test_data/trends_newyears.csv")
     # times, values = load_gpfs_csv("test_data/ub-hpc-6665127-gpfs-reads.csv")
 
-    # plt.plot(times, values)
-    # plt.show()
-
-
     autocorr = autocorrelation(values)
 
     fig, ax = plt.subplots(nrows=3, ncols=1)
