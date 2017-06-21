@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,7 +12,7 @@ if __name__ == '__main__':
     # values = 1 - values
     # times = np.arange(1, values.size + 1, dtype=np.float)
 
-    times, values = load_google_trends_csv("test_data/trends_newyears.csv")
+    times, values = load_google_trends_csv(os.path.join(os.getcwd(), "test_data/trends_newyears.csv"))
     # times, values = load_gpfs_csv("test_data/ub-hpc-6665127-gpfs-reads.csv")
 
     autocorr = autocorrelation(values)
