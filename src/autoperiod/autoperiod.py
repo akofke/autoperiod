@@ -41,12 +41,32 @@ def main():
     plt.show()
 
 
-def autoperiod(times, values):
-    hints, periods = get_period_hints(times, values)
+def autoperiod(times, values, plot=False):
+
+    if plot:
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1)
+
+    hints, periods = get_period_hints(times, values, axes=ax2)
     acf = autocorrelation(values)
 
-    for i, period in hints:
-        is_valid, period = validate_hint(i, acf, periods, times)
+    period = None
+    for i, p in hints:
+        is_valid, period = validate_hint(i, acf, periods, times, axes=ax3)
+        if is_valid:
+            break
+
+    if plot:
+        ax1.plot(times, values)
+        if period:
+            phase_shift = times[np.argmax(values)]
+            amplitude = np.max(values) / 2
+            sinwave = np.cos(2 * np.pi / period * (times - phase_shift)) * amplitude + amplitude
+            ax1.plot(times, sinwave)
+
+        fig.tight_layout()
+        mng = plt.get_current_fig_manager()
+        mng.resize(*mng.window.maxsize())
+
 
 
 def get_period_hints(times, values, axes=None):
@@ -56,7 +76,6 @@ def get_period_hints(times, values, axes=None):
 
     time_span = times[-1] - times[0]
     time_interval = times[1] - times[0]
-    print(time_span)
 
     # sequence = np.stack((times, values), axis=-1)
 

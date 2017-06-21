@@ -15,5 +15,9 @@ setup(
         'scipy',
         'astropy',
         'matplotlib'
+    ],
+
+    tests_require=[
+        'pytest',
     ]
 )
