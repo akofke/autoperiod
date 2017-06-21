@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import division, print_function, absolute_import
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +7,7 @@ from scipy.signal import fftconvolve
 from scipy.stats import linregress
 from six.moves import range
 
-from helpers import load_google_trends_csv, load_gpfs_csv
+from autoperiod.helpers import load_google_trends_csv, load_gpfs_csv
 
 
 def main():
