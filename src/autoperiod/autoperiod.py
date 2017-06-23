@@ -7,24 +7,18 @@ from scipy.signal import fftconvolve
 from scipy.stats import linregress
 from six.moves import range
 
-from autoperiod.helpers import load_google_trends_csv, load_gpfs_csv
 
-
-def main():
-    values = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3] * 100, np.float)
-    values = values / np.max(values)
-    values = 1 - values
-    times = np.arange(1, values.size + 1, dtype=np.float)
-
-
-def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False):
+# TODO: extract plotting logic into class
+def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, pdfpages=None, title=None, **fig_kw):
 
     if times[0] != 0:
         # convert absolute times to time differences from the start timestamp
         times = times - times[0]
 
     if plot:
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1)
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(20, 20) if pdfpages else None, **fig_kw)
+        if title:
+            ax1.set_title(title)
 
     hints, periods = get_period_hints(times, values, axes=ax2 if plot else None)
     acf = autocorrelation(values)
@@ -51,6 +45,9 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False):
         mng.resize(*mng.window.maxsize())
         if not delay_show:
             plt.show()
+
+        if pdfpages:
+            pdfpages.savefig(fig, dpi=1200, facecolor=fig.get_facecolor())
 
     return period if is_valid else None
 
