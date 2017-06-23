@@ -22,10 +22,10 @@ def load_gpfs_csv(filename):
 
 def load_google_trends_csv(filename):
     data = np.genfromtxt(filename, delimiter=',', converters={
-        0: lambda d: datetime.strptime(d, '%Y-%m-%d')
+        0: lambda d: datetime.strptime(d.decode('ascii'), '%Y-%m-%d')
     })
     dates = data['f0']
     values = data['f1']
 
-    times = np.array(map(lambda d: (d - dates[0]).days, dates))
+    times = np.array([(d - dates[0]).days for d in dates])
     return times, values

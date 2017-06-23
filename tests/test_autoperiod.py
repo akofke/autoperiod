@@ -3,9 +3,10 @@ from __future__ import division
 import numpy as np
 import os
 import pytest
-from pytest import approx
 
 from autoperiod import autoperiod
+from pytest import approx
+
 from autoperiod.helpers import load_google_trends_csv, load_gpfs_csv
 
 
