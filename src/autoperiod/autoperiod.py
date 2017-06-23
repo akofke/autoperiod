@@ -9,7 +9,7 @@ from six.moves import range
 
 
 # TODO: extract plotting logic into class
-def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, pdfpages=None, title=None, **fig_kw):
+def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, filename=None, pdfpages=None, title=None, **fig_kw):
 
     if times[0] != 0:
         # convert absolute times to time differences from the start timestamp
@@ -48,6 +48,10 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
 
         if pdfpages:
             pdfpages.savefig(fig, dpi=1200, facecolor=fig.get_facecolor())
+
+        if filename:
+            fig.savefig(filename, format='pdf', facecolor=fig.get_facecolor())
+
 
     return period if is_valid else None
 
