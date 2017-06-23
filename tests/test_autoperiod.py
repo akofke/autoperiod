@@ -67,3 +67,8 @@ def test_gpfs_writes():
     times, values = load_gpfs_csv(data("ub-hpc-6665127-gpfs-writes.csv"))
     period = autoperiod(times, values)
     assert period == approx(9560, abs=5)
+
+def test_trends_python_nonperiodic():
+    times, values = load_google_trends_csv(data("trends_python.csv"))
+    period = autoperiod(times, values)
+    assert period is None
