@@ -11,37 +11,13 @@ from autoperiod.helpers import load_google_trends_csv, load_gpfs_csv
 
 
 def main():
-    # values = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3] * 100, np.float)
-    # values = values / np.max(values)
-    # values = 1 - values
-    # times = np.arange(1, values.size + 1, dtype=np.float)
-
-    times, values = load_google_trends_csv("test_data/trends_newyears.csv")
-    # times, values = load_gpfs_csv("test_data/ub-hpc-6665127-gpfs-reads.csv")
-
-    autocorr = autocorrelation(values)
-
-    fig, ax = plt.subplots(nrows=3, ncols=1)
-    hints, periods = get_period_hints(times, values, axes=ax[1])
-    for i, period in hints:
-        is_valid, period = validate_hint(i, autocorr, periods, times, axes=ax[2], plot_only_valid=False)
-        if is_valid:
-            break
-
-    ax[0].plot(times, values)
-
-    phase_shift = times[np.argmax(values)]
-    amplitude = np.max(values) / 2
-    sinwave = np.cos(2 * np.pi / period * (times - phase_shift)) * amplitude + amplitude
-    ax[0].plot(times, sinwave)
-
-    fig.tight_layout()
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
-    plt.show()
+    values = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3] * 100, np.float)
+    values = values / np.max(values)
+    values = 1 - values
+    times = np.arange(1, values.size + 1, dtype=np.float)
 
 
-def autoperiod(times, values, plot=False):
+def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False):
 
     if times[0] != 0:
         # convert absolute times to time differences from the start timestamp
@@ -50,18 +26,20 @@ def autoperiod(times, values, plot=False):
     if plot:
         fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1)
 
-    hints, periods = get_period_hints(times, values, axes=ax2)
+    hints, periods = get_period_hints(times, values, axes=ax2 if plot else None)
     acf = autocorrelation(values)
 
     period = None
     is_valid = False
     for i, p in hints:
-        is_valid, period = validate_hint(i, acf, periods, times, axes=ax3, plot_only_valid=False)
+        is_valid, period = validate_hint(i, acf, periods, times, axes=ax3 if plot else None, plot_only_valid=not verbose_plot)
         if is_valid:
             break
 
     if plot:
         ax1.plot(times, values)
+        ax3.scatter(times, acf, s=2, label='Autocorrelation')
+        ax3.legend()
         if period and is_valid:
             phase_shift = times[np.argmax(values)]
             amplitude = np.max(values) / 2
@@ -71,7 +49,10 @@ def autoperiod(times, values, plot=False):
         fig.tight_layout()
         mng = plt.get_current_fig_manager()
         mng.resize(*mng.window.maxsize())
+        if not delay_show:
+            plt.show()
 
+    return period if is_valid else None
 
 
 def get_period_hints(times, values, axes=None):
@@ -84,6 +65,7 @@ def get_period_hints(times, values, axes=None):
 
     # sequence = np.stack((times, values), axis=-1)
 
+    # TODO: more efficient algorithm for finding the power threshold
     for _ in range(permutations):
         p = np.random.permutation(values)
         freq, power = LombScargle(times, p).autopower()
@@ -157,7 +139,6 @@ def validate_hint(period_idx, acf, periods, times, axes=None, plot_all_iteration
         plt.legend()
 
     if axes and valid:
-        axes.scatter(times, acf, s=2, label='Autocorrelation')
         axes.plot(times[search_min:t_split + 1], min_c1 + min_slope1 * times[search_min:t_split + 1], c='r',
                   label='slope: {}, error: {}'.format(min_slope1, min_stderr1))
         axes.plot(times[t_split + 1:search_max], min_c2 + min_slope2 * times[t_split + 1:search_max], c='r',
@@ -165,14 +146,22 @@ def validate_hint(period_idx, acf, periods, times, axes=None, plot_all_iteration
         axes.scatter(times[t_split], acf[t_split], c='g', label='{}'.format(times[t_split]))
         axes.legend()
 
-    return (min_slope1 > 0) and (min_slope2 < 0), times[t_split]
+    return valid, times[t_split]
 
 
 def get_acf_search_range(period_index, periods, times):
     min_period = 0.5 * (periods[period_index + 1] + periods[period_index + 2])
     max_period = 0.5 * (periods[period_index - 1] + periods[period_index - 2])
 
-    return closest_index(min_period, times), closest_index(max_period, times)
+    min_idx = closest_index(min_period, times)
+    max_idx = closest_index(max_period, times)
+    while max_idx - min_idx + 1 < 6:
+        if min_idx > 0:
+            min_idx -= 1
+        if max_idx < times.size - 1:
+            max_idx += 1
+
+    return min_idx, max_idx
 
 
 def closest_index(value, arr):
