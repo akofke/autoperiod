@@ -43,6 +43,10 @@ def main():
 
 def autoperiod(times, values, plot=False):
 
+    if times[0] != 0:
+        # convert absolute times to time differences from the start timestamp
+        times = times - times[0]
+
     if plot:
         fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1)
 
@@ -50,14 +54,15 @@ def autoperiod(times, values, plot=False):
     acf = autocorrelation(values)
 
     period = None
+    is_valid = False
     for i, p in hints:
-        is_valid, period = validate_hint(i, acf, periods, times, axes=ax3)
+        is_valid, period = validate_hint(i, acf, periods, times, axes=ax3, plot_only_valid=False)
         if is_valid:
             break
 
     if plot:
         ax1.plot(times, values)
-        if period:
+        if period and is_valid:
             phase_shift = times[np.argmax(values)]
             amplitude = np.max(values) / 2
             sinwave = np.cos(2 * np.pi / period * (times - phase_shift)) * amplitude + amplitude
