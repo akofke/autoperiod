@@ -15,13 +15,18 @@ if __name__ == '__main__':
     # values = np.array([0, 0, 1, 1] * 10, np.float)
     # times = np.arange(0, values.size, dtype=np.float)
 
-    # times, values = load_google_trends_csv(os.path.join(os.getcwd(), "tests/data/trends_easter.csv"))
+    times, values = load_google_trends_csv(os.path.join(os.getcwd(), "tests/data/trends_easter.csv"))
+    p = autoperiod(times, values, plot=True, verbose_plot=False, delay_show=True)
+
     times, values = load_gpfs_csv(os.path.join(os.getcwd(), "tests/data/ub-hpc-6665127-gpfs-writes.csv"))
+    p = autoperiod(times, values, plot=True, verbose_plot=False, delay_show=True)
+
+    times, values = load_google_trends_csv(os.path.join(os.getcwd(), "tests/data/trends_newyears.csv"))
+    p = autoperiod(times, values, plot=True, verbose_plot=False)
 
     # times = np.arange(0, 2, 0.01)
     # values = np.sin(4*np.pi*times)
 
-    autoperiod(times, values, plot=True, verbose_plot=False)
 
 
 

@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.stats import LombScargle
@@ -10,14 +11,15 @@ from six.moves import range
 
 
 # TODO: extract plotting logic into class
-def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, filename=None, pdfpages=None, title=None, **fig_kw):
-
+def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, filename=None, pdfpages=None,
+               title=None, **fig_kw):
     if times[0] != 0:
         # convert absolute times to time differences from the start timestamp
         times = times - times[0]
 
     if plot:
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(20, 20) if pdfpages or filename else None, **fig_kw)
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(20, 20) if pdfpages or filename else None,
+                                            **fig_kw)
         if title:
             ax1.set_title(title)
 
@@ -27,7 +29,8 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
     period = None
     is_valid = False
     for i, p in hints:
-        is_valid, period = validate_hint(i, acf, periods, times, axes=ax3 if plot else None, plot_only_valid=not verbose_plot)
+        is_valid, period = validate_hint(i, acf, periods, times, axes=ax3 if plot else None,
+                                         plot_only_valid=not verbose_plot)
         if is_valid:
             break
 
@@ -53,7 +56,6 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
         if filename:
             fig.savefig(filename, dpi=1200, format='pdf', facecolor=fig.get_facecolor())
 
-
     return period if is_valid else None
 
 
@@ -68,13 +70,13 @@ def get_period_hints(times, values, axes=None):
     values_standardized = values - np.mean(values)
 
     freq, power = LombScargle(times, values_standardized).autopower(minimum_frequency=1 / time_span,
-                                                       maximum_frequency=1 / (time_interval * 2),
-                                                       normalization='psd')
+                                                                    maximum_frequency=1 / (time_interval * 2),
+                                                                    normalization='psd')
 
     # Normalize the power values in order to find a significance threshold
     norm = 1 / (2 * np.var(values_standardized))
     power = power * norm
-    power_threshold = -1 * math.log(1 - math.pow(.99, 1 / power.size))
+    power_threshold = -1 * math.log(1 - math.pow(.5, 1 / power.size))
 
     periods = 1 / freq
     for i, period in enumerate(periods):
@@ -176,7 +178,3 @@ def autocorrelation(values):
 
     acf = fftconvolve(values, values[::-1], mode='full')
     return acf[acf.size // 2:]
-
-
-if __name__ == '__main__':
-    main()
