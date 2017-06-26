@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import math
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.stats import LombScargle
@@ -16,7 +17,7 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
         times = times - times[0]
 
     if plot:
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(20, 20) if pdfpages else None, **fig_kw)
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(20, 20) if pdfpages or filename else None, **fig_kw)
         if title:
             ax1.set_title(title)
 
@@ -50,7 +51,7 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
             pdfpages.savefig(fig, dpi=1200, facecolor=fig.get_facecolor())
 
         if filename:
-            fig.savefig(filename, format='pdf', facecolor=fig.get_facecolor())
+            fig.savefig(filename, dpi=1200, format='pdf', facecolor=fig.get_facecolor())
 
 
     return period if is_valid else None
@@ -64,19 +65,16 @@ def get_period_hints(times, values, axes=None):
     time_span = times[-1] - times[0]
     time_interval = times[1] - times[0]
 
-    # sequence = np.stack((times, values), axis=-1)
+    values_standardized = values - np.mean(values)
 
-    # TODO: more efficient algorithm for finding the power threshold
-    for _ in range(permutations):
-        p = np.random.permutation(values)
-        freq, power = LombScargle(times, p).autopower()
-        max_powers.append(np.max(power))
+    freq, power = LombScargle(times, values_standardized).autopower(minimum_frequency=1 / time_span,
+                                                       maximum_frequency=1 / (time_interval * 2),
+                                                       normalization='psd')
 
-    max_powers.sort()
-    power_threshold = max_powers[int(len(max_powers) * .99)]
-
-    freq, power = LombScargle(times, values).autopower(minimum_frequency=1 / time_span,
-                                                       maximum_frequency=1 / (time_interval * 2))
+    # Normalize the power values in order to find a significance threshold
+    norm = 1 / (2 * np.var(values_standardized))
+    power = power * norm
+    power_threshold = -1 * math.log(1 - math.pow(.99, 1 / power.size))
 
     periods = 1 / freq
     for i, period in enumerate(periods):
