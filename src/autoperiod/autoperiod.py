@@ -69,14 +69,17 @@ def get_period_hints(times, values, axes=None):
 
     values_standardized = values - np.mean(values)
 
-    freq, power = LombScargle(times, values_standardized).autopower(minimum_frequency=1 / time_span,
-                                                                    maximum_frequency=1 / (time_interval * 2),
-                                                                    normalization='psd')
+    # TODO: more efficient algorithm for finding the power threshold
+    for _ in range(permutations):
+        p = np.random.permutation(values)
+        freq, power = LombScargle(times, p).autopower()
+        max_powers.append(np.max(power))
 
-    # Normalize the power values in order to find a significance threshold
-    norm = 1 / (2 * np.var(values_standardized))
-    power = power * norm
-    power_threshold = -1 * math.log(1 - math.pow(.5, 1 / power.size))
+    max_powers.sort()
+    power_threshold = max_powers[int(len(max_powers) * .99)]
+
+    freq, power = LombScargle(times, values).autopower(minimum_frequency=1 / time_span,
+                                                       maximum_frequency=1 / (time_interval * 2))
 
     periods = 1 / freq
     for i, period in enumerate(periods):
