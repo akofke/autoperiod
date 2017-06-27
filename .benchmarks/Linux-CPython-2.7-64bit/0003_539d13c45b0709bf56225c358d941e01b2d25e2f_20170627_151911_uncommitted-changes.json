@@ -1,0 +1,80 @@
+{
+    "commit_info": {
+        "id": "539d13c45b0709bf56225c358d941e01b2d25e2f", 
+        "dirty": true
+    }, 
+    "version": "3.0.0", 
+    "benchmarks": [
+        {
+            "stats": {
+                "q1": 0.9065832495689392, 
+                "q3": 0.9151430726051331, 
+                "iterations": 1, 
+                "min": 0.9042770862579346, 
+                "max": 0.9157490730285645, 
+                "median": 0.9074289798736572, 
+                "iqr": 0.008559823036193848, 
+                "stddev_outliers": 2, 
+                "ld15iqr": 0.9042770862579346, 
+                "stddev": 0.0050947841185603375, 
+                "hd15iqr": 0.9157490730285645, 
+                "outliers": "2;0", 
+                "iqr_outliers": 0, 
+                "rounds": 5, 
+                "mean": 0.9099496364593506
+            }, 
+            "fullname": "tests/benchmarks.py::bench_gpfs_reads_mc", 
+            "group": null, 
+            "name": "bench_gpfs_reads_mc", 
+            "options": {
+                "disable_gc": false, 
+                "warmup": false, 
+                "timer": "time", 
+                "min_rounds": 5, 
+                "max_time": 1.0, 
+                "min_time": 5e-06
+            }
+        }, 
+        {
+            "stats": {
+                "q1": 0.02293252944946289, 
+                "q3": 0.023159027099609375, 
+                "iterations": 1, 
+                "min": 0.022794008255004883, 
+                "max": 0.023774147033691406, 
+                "median": 0.02302849292755127, 
+                "iqr": 0.00022649765014648438, 
+                "stddev_outliers": 10, 
+                "ld15iqr": 0.022794008255004883, 
+                "stddev": 0.00021024462426253565, 
+                "hd15iqr": 0.02354288101196289, 
+                "outliers": "10;3", 
+                "iqr_outliers": 3, 
+                "rounds": 44, 
+                "mean": 0.023073104294863613
+            }, 
+            "fullname": "tests/benchmarks.py::bench_gpfs_read_stat", 
+            "group": null, 
+            "name": "bench_gpfs_read_stat", 
+            "options": {
+                "disable_gc": false, 
+                "warmup": false, 
+                "timer": "time", 
+                "min_rounds": 5, 
+                "max_time": 1.0, 
+                "min_time": 5e-06
+            }
+        }
+    ], 
+    "machine_info": {
+        "node": "srv-u13-25.cbls.ccr.buffalo.edu", 
+        "machine": "x86_64", 
+        "python_version": "2.7.13", 
+        "release": "3.10.0-514.16.1.el7.x86_64", 
+        "python_compiler": "GCC 4.4.7 20120313 (Red Hat 4.4.7-1)", 
+        "python_implementation": "CPython", 
+        "processor": "x86_64", 
+        "system": "Linux"
+    }, 
+    "datetime": "2017-06-27T19:19:26.204661"
+}

@@ -1,0 +1,50 @@
+{
+    "commit_info": {
+        "id": "539d13c45b0709bf56225c358d941e01b2d25e2f", 
+        "dirty": true
+    }, 
+    "version": "3.0.0", 
+    "benchmarks": [
+        {
+            "stats": {
+                "q1": 0.9022207856178284, 
+                "q3": 0.9090813994407654, 
+                "iterations": 1, 
+                "min": 0.9016108512878418, 
+                "max": 0.9107620716094971, 
+                "median": 0.9076011180877686, 
+                "iqr": 0.006860613822937012, 
+                "stddev_outliers": 2, 
+                "ld15iqr": 0.9016108512878418, 
+                "stddev": 0.003983714073359632, 
+                "hd15iqr": 0.9107620716094971, 
+                "outliers": "2;0", 
+                "iqr_outliers": 0, 
+                "rounds": 5, 
+                "mean": 0.9061838626861572
+            }, 
+            "fullname": "tests/benchmarks.py::bench_gpfs_reads", 
+            "group": null, 
+            "name": "bench_gpfs_reads", 
+            "options": {
+                "disable_gc": false, 
+                "warmup": false, 
+                "timer": "time", 
+                "min_rounds": 5, 
+                "max_time": 1.0, 
+                "min_time": 5e-06
+            }
+        }
+    ], 
+    "machine_info": {
+        "node": "srv-u13-25.cbls.ccr.buffalo.edu", 
+        "machine": "x86_64", 
+        "python_version": "2.7.13", 
+        "release": "3.10.0-514.16.1.el7.x86_64", 
+        "python_compiler": "GCC 4.4.7 20120313 (Red Hat 4.4.7-1)", 
+        "python_implementation": "CPython", 
+        "processor": "x86_64", 
+        "system": "Linux"
+    }, 
+    "datetime": "2017-06-27T18:55:59.168215"
+}

@@ -12,7 +12,9 @@ from six.moves import range
 
 # TODO: extract plotting logic into class
 def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, filename=None, pdfpages=None,
-               title=None, **fig_kw):
+               title=None,
+               threshold_method='mc',
+               **fig_kw):
     if times[0] != 0:
         # convert absolute times to time differences from the start timestamp
         times = times - times[0]
@@ -23,7 +25,7 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
         if title:
             ax1.set_title(title)
 
-    hints, periods = get_period_hints(times, values, axes=ax2 if plot else None)
+    hints, periods = get_period_hints(times, values, threshold_method, axes=ax2 if plot else None)
     acf = autocorrelation(values)
 
     period = None
@@ -59,7 +61,7 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
     return period if is_valid else None
 
 
-def get_period_hints(times, values, axes=None):
+def get_period_hints(times, values, threshold_method='mc', axes=None):
     np.seterr(invalid="ignore")
 
     permutations = 20
@@ -69,19 +71,29 @@ def get_period_hints(times, values, axes=None):
     time_span = times[-1] - times[0]
     time_interval = times[1] - times[0]
 
-    values_standardized = values - np.mean(values)
+    power_threshold = None
+    norm = 1 / (2 * np.var(values - np.mean(values)))
 
-    # TODO: more efficient algorithm for finding the power threshold
-    for _ in range(permutations):
-        p = np.random.permutation(values)
-        freq, power = LombScargle(times, p).autopower()
-        max_powers.append(np.max(power))
+    if threshold_method == 'mc':
+        # TODO: more efficient algorithm for finding the power threshold
+        for _ in range(permutations):
+            p = np.random.permutation(values)
+            freq, power = LombScargle(times, p).autopower(normalization='psd')
+            power = power * norm
+            max_powers.append(np.max(power))
 
-    max_powers.sort()
-    power_threshold = max_powers[int(len(max_powers) * .99)]
+        max_powers.sort()
+        power_threshold = max_powers[int(len(max_powers) * .99)]
 
     freq, power = LombScargle(times, values).autopower(minimum_frequency=1 / time_span,
-                                                       maximum_frequency=1 / (time_interval * 2))
+                                                       maximum_frequency=1 / (time_interval * 2),
+                                                       normalization='psd')
+
+    # double the power, since the astropy lomb-scargle implementation halves it during the psd normalization
+    power = 2 * power * norm
+
+    if threshold_method == 'statistical':
+        power_threshold = -1 * math.log(1 - math.pow(.95, 1 / power.size))
 
     periods = 1 / freq
     for i, period in enumerate(periods):

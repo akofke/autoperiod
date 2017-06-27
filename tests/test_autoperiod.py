@@ -29,25 +29,28 @@ def test_clean_sinwave():
         (40, 4.0)
     ]
 )
-def test_tight_sinwave(trange, freqscale):
+@pytest.mark.parametrize("threshold_method", ["mc", "statistical"])
+def test_tight_sinwave(trange, freqscale, threshold_method):
     times = np.arange(0, trange, 0.01)
     values = np.sin(freqscale * np.pi * times)
-    period = autoperiod(times, values)
+    period = autoperiod(times, values, threshold_method=threshold_method)
     # TODO: increase precision
     assert period == approx(2.0 / freqscale, abs=2e-2)
 
 
-def test_squarewave():
+@pytest.mark.parametrize("threshold_method", ["mc", "statistical"])
+def test_squarewave(threshold_method):
     # TODO: this case is very fragile
     values = np.array([0, 0, 1, 1] * 10, np.float)
     times = np.arange(0, values.size, dtype=np.float)
-    period = autoperiod(times, values)
+    period = autoperiod(times, values, threshold_method=threshold_method)
     assert period == 4.0
 
 
-def test_trends_newyears():
+@pytest.mark.parametrize("threshold_method", ["mc", "statistical"])
+def test_trends_newyears(threshold_method):
     times, values = load_google_trends_csv(data("trends_newyears.csv"))
-    period = autoperiod(times, values)
+    period = autoperiod(times, values, threshold_method=threshold_method)
     # within 3% of "expected" period
     assert period == approx(365, rel=0.03)
 
