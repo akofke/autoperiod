@@ -54,9 +54,11 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
 
         if pdfpages:
             pdfpages.savefig(fig, dpi=1200, facecolor=fig.get_facecolor())
+            plt.close(fig)
 
         if filename:
             fig.savefig(filename, dpi=1200, format='pdf', facecolor=fig.get_facecolor())
+            plt.close(fig)
 
     return period if is_valid else None
 
@@ -93,14 +95,14 @@ def get_period_hints(times, values, threshold_method='mc', axes=None):
     power = 2 * power * norm
 
     if threshold_method == 'statistical':
-        power_threshold = -1 * math.log(1 - math.pow(.95, 1 / power.size))
+        power_threshold = -1 * math.log(1 - math.pow(.90, 1 / power.size))
 
     periods = 1 / freq
     for i, period in enumerate(periods):
         if power[i] > power_threshold and period < time_span / 2 and period > 2 * time_interval:
             period_hints.append((i, period))
 
-    period_hints = sorted(period_hints, key=lambda p: power[p[0]], reverse=True)
+    period_hints = sorted(period_hints, key=lambda per: power[per[0]], reverse=True)
 
     if axes:
         axes.plot(periods, power)
