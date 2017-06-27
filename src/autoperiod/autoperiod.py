@@ -60,6 +60,8 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
 
 
 def get_period_hints(times, values, axes=None):
+    np.seterr(invalid="ignore")
+
     permutations = 20
     max_powers = []
     period_hints = []

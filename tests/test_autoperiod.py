@@ -61,7 +61,7 @@ def test_trends_easter():
 
 def test_gpfs_reads(benchmark):
     times, values = load_gpfs_csv(data("ub-hpc-6665127-gpfs-reads.csv"))
-    period = benchmark(autoperiod, times, values)
+    period = autoperiod(times, values)
     assert period == approx(9469, rel=0.0001)
 
 
