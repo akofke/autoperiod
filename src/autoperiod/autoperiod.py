@@ -77,12 +77,12 @@ def get_period_hints(times, values, threshold_method='mc', axes=None):
     norm = 1 / (2 * np.var(values - np.mean(values)))
 
     if threshold_method == 'mc':
+        shuf = np.copy(values)
         # TODO: more efficient algorithm for finding the power threshold
         for _ in range(permutations):
-            p = np.random.permutation(values)
-            freq, power = LombScargle(times, p).autopower(normalization='psd')
-            power = power * norm
-            max_powers.append(np.max(power))
+            np.random.shuffle(shuf)
+            freq, power = LombScargle(times, shuf).autopower(normalization='psd')
+            max_powers.append(np.max(power) * norm)
 
         max_powers.sort()
         power_threshold = max_powers[int(len(max_powers) * .99)]
