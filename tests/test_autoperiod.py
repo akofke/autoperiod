@@ -55,26 +55,30 @@ def test_trends_newyears(threshold_method):
     assert period == approx(365, rel=0.03)
 
 
-def test_trends_easter():
+@pytest.mark.parametrize("threshold_method", ["mc", "statistical"])
+def test_trends_easter(threshold_method):
     times, values = load_google_trends_csv(data("trends_easter.csv"))
-    period = autoperiod(times, values)
+    period = autoperiod(times, values, threshold_method=threshold_method)
     # Easter isn't a fixed holiday, so the "expected" period won't be as close to 365 days
     assert period == approx(365, rel=0.05)
 
 
-def test_gpfs_reads():
+@pytest.mark.parametrize("threshold_method", ["mc", "statistical"])
+def test_gpfs_reads(threshold_method):
     times, values = load_gpfs_csv(data("ub-hpc-6665127-gpfs-reads.csv"))
-    period = autoperiod(times, values)
-    assert period == approx(9469, rel=0.0001)
+    period = autoperiod(times, values, threshold_method=threshold_method)
+    assert period == approx(9469, rel=0.01)
 
 
-def test_gpfs_writes():
+@pytest.mark.parametrize("threshold_method", ["mc", "statistical"])
+def test_gpfs_writes(threshold_method):
     times, values = load_gpfs_csv(data("ub-hpc-6665127-gpfs-writes.csv"))
-    period = autoperiod(times, values)
-    assert period == approx(9560, abs=5)
+    period = autoperiod(times, values, threshold_method=threshold_method)
+    assert period == approx(9560, rel=0.01)
 
 
-def test_trends_python_nonperiodic():
+@pytest.mark.parametrize("threshold_method", ["mc", "statistical"])
+def test_trends_python_nonperiodic(threshold_method):
     times, values = load_google_trends_csv(data("trends_python.csv"))
-    period = autoperiod(times, values)
+    period = autoperiod(times, values, threshold_method=threshold_method)
     assert period is None
