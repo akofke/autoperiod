@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import division, print_function, absolute_import
 
 import math
@@ -38,7 +39,7 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
 
     if plot:
         ax1.plot(times, values)
-        ax3.scatter(times, acf, s=2, label='Autocorrelation')
+        ax3.plot(times, acf, '-o', lw=0.5, ms=2, label='Autocorrelation')
         ax3.legend()
         if period and is_valid:
             phase_shift = times[np.argmax(values)]
@@ -66,7 +67,7 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
 def get_period_hints(times, values, threshold_method='mc', axes=None):
     np.seterr(invalid="ignore")
 
-    permutations = 20
+    permutations = 40
     max_powers = []
     period_hints = []
 
@@ -114,15 +115,20 @@ def get_period_hints(times, values, threshold_method='mc', axes=None):
 
 
 def validate_hint(period_idx, acf, periods, times, axes=None, plot_all_iterations=False, plot_only_valid=True):
+    acf /= np.max(acf)
+    acf *= 100
+
     search_min, search_max = get_acf_search_range(period_idx, periods, times)
 
     min_err = float("inf")
     t_split = None
+    min_slope1 = 0
+    min_slope2 = 0
     for t in range(search_min + 1, search_max):
         seg1_x = times[search_min:t + 1]
         seg1_y = acf[search_min:t + 1]
-        seg2_x = times[t + 1:search_max + 1]
-        seg2_y = acf[t + 1:search_max + 1]
+        seg2_x = times[t:search_max + 1]
+        seg2_y = acf[t:search_max + 1]
 
         slope1, c1, _, _, stderr1 = linregress(seg1_x, seg1_y)
         slope2, c2, _, _, stderr2 = linregress(seg2_x, seg2_y)
@@ -146,14 +152,18 @@ def validate_hint(period_idx, acf, periods, times, axes=None, plot_all_iteration
             #     plt.scatter(times[t], acf[t], c='g')
             #     plt.legend()
 
-    valid = min_slope1 > 0 and min_slope2 < 0
+    angle1 = np.arctan(min_slope1) / (np.pi / 2)
+    angle2 = np.arctan(min_slope2) / (np.pi / 2)
+    valid = min_slope1 > min_slope2 and not np.isclose(np.abs(angle1 - angle2), 0, atol=0.01)
+    window = acf[search_min:search_max + 1]
+    peak_idx = np.argmax(window) + search_min
 
     if not plot_only_valid:
         plt.figure()
-        plt.scatter(times, acf, s=2, label='Autocorrelation')
+        plt.plot(times, acf, '-o', lw=.5, ms=2, label='Autocorrelation')
         plt.plot(times[search_min:t_split + 1], min_c1 + min_slope1 * times[search_min:t_split + 1], c='r',
                  label='slope: {}, error: {}'.format(min_slope1, min_stderr1))
-        plt.plot(times[t_split + 1:search_max], min_c2 + min_slope2 * times[t_split + 1:search_max], c='r',
+        plt.plot(times[t_split:search_max], min_c2 + min_slope2 * times[t_split:search_max], c='r',
                  label='slope: {}, error: {}'.format(min_slope2, min_stderr2))
         plt.scatter(times[t_split], acf[t_split], c='g')
         plt.legend()
@@ -161,12 +171,13 @@ def validate_hint(period_idx, acf, periods, times, axes=None, plot_all_iteration
     if axes and valid:
         axes.plot(times[search_min:t_split + 1], min_c1 + min_slope1 * times[search_min:t_split + 1], c='r',
                   label='slope: {}, error: {}'.format(min_slope1, min_stderr1))
-        axes.plot(times[t_split + 1:search_max], min_c2 + min_slope2 * times[t_split + 1:search_max], c='r',
+        axes.plot(times[t_split:search_max], min_c2 + min_slope2 * times[t_split:search_max], c='r',
                   label='slope: {}, error: {}'.format(min_slope2, min_stderr2))
         axes.scatter(times[t_split], acf[t_split], c='g', label='{}'.format(times[t_split]))
+        axes.scatter(times[peak_idx], acf[peak_idx], c='y', label='{}'.format(times[peak_idx]))
         axes.legend()
 
-    return valid, times[t_split]
+    return valid, times[peak_idx]
 
 
 def get_acf_search_range(period_index, periods, times):

@@ -17,7 +17,7 @@ def test_clean_sinwave():
     times = np.arange(0, 10, 0.01)
     values = np.sin(2 * np.pi * times)
     period = autoperiod(times, values)
-    assert period == 1.0
+    assert period == approx(1.0, abs=0.1)
 
 
 @pytest.mark.parametrize(
@@ -80,5 +80,32 @@ def test_gpfs_writes(threshold_method):
 @pytest.mark.parametrize("threshold_method", ["mc", "statistical"])
 def test_trends_python_nonperiodic(threshold_method):
     times, values = load_google_trends_csv(data("trends_python.csv"))
+    period = autoperiod(times, values, threshold_method=threshold_method)
+    assert period is None
+
+
+@pytest.mark.parametrize("threshold_method", ['mc', 'statistical'])
+@pytest.mark.parametrize('filename,expect_period', [
+    ('industry-2895978-gpfs-reads.csv', 180),
+    ('industry-2896041-gpfs-writes.csv', 150)
+])
+def test_pcp_smallperiod(threshold_method, filename, expect_period):
+    # test for regression to false alarm large period
+    times, values = load_gpfs_csv(data(filename))
+    period = autoperiod(times, values, threshold_method=threshold_method)
+    assert period == approx(expect_period, rel=0.01)
+
+@pytest.mark.parametrize("mthd", ['mc', 'statistical'])
+def test_pcp_spiky_acf(mthd):
+    times, values = load_gpfs_csv(data("chemistry-1455991-gpfs-writes.csv"))
+    period = autoperiod(times, values, threshold_method=mthd)
+    assert period == approx(3660, rel=0.01)
+
+@pytest.mark.parametrize("threshold_method", ['mc', 'statistical'])
+@pytest.mark.parametrize('filename', [
+    'ub-hpc-writes-cpn-k16-25-01.csv',
+])
+def test_pcp_noperiod(threshold_method, filename):
+    times, values = load_gpfs_csv(data(filename))
     period = autoperiod(times, values, threshold_method=threshold_method)
     assert period is None
