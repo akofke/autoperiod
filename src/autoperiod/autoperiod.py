@@ -48,13 +48,13 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
             amplitude = np.max(values) / 2
             sinwave = np.cos(2 * np.pi / period * (times - phase_shift)) * amplitude + amplitude
             ax1.plot(times, sinwave)
-            on_period_area, off_period_area = period_score(times, values, period, sinwave)
+            on_period_blocks, on_period_area, off_period_blocks, off_period_area = period_score(times, values, period, sinwave)
             inset_ax = inset_axes(ax1, width='10%', height='50%', loc=1, axes_kwargs={
                 'alpha': 0.6,
                 'xticks': (1, 2),
                 'xticklabels': ("on", "off")
             })
-            inset_ax.get_yaxis().set_visible(False)
+            # inset_ax.get_yaxis().set_visible(False)
             inset_ax.bar(1, on_period_area)
             inset_ax.bar(2, off_period_area)
 
@@ -86,8 +86,8 @@ def period_score(times, values, period, sinwave):
     """
     period_region = sinwave > (np.max(sinwave) / 2)
 
-    on_period_area = integrate.simps(values[period_region], times[period_region])
-    off_period_area = integrate.simps(values[~period_region], times[~period_region])
+    on_period_area = integrate.trapz(values[period_region], times[period_region])
+    off_period_area = integrate.trapz(values[~period_region], times[~period_region])
 
     # An array of indices of the cutoff points for the period blocks, i.e. where it goes from
     # "on-period" to "off-period"
@@ -102,7 +102,7 @@ def period_score(times, values, period, sinwave):
     on_period_blocks = period_blocks[::2] if period_region[0] else period_blocks[1::2]
     off_period_blocks = period_blocks[1::2] if period_region[0] else period_blocks[::2]
 
-    return on_period_blocks, off_period_blocks
+    return on_period_blocks, on_period_area, off_period_blocks, off_period_area
 
 
 def get_period_hints(times, values, threshold_method='mc', axes=None):
