@@ -6,8 +6,10 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.stats import LombScargle
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from scipy.signal import fftconvolve
 from scipy.stats import linregress
+from scipy import integrate
 from six.moves import range
 
 
@@ -46,6 +48,15 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
             amplitude = np.max(values) / 2
             sinwave = np.cos(2 * np.pi / period * (times - phase_shift)) * amplitude + amplitude
             ax1.plot(times, sinwave)
+            on_period_area, off_period_area = period_score(times, values, period, sinwave)
+            inset_ax = inset_axes(ax1, width='10%', height='50%', loc=1, axes_kwargs={
+                'alpha': 0.6,
+                'xticks': (1, 2),
+                'xticklabels': ("on", "off")
+            })
+            inset_ax.get_yaxis().set_visible(False)
+            inset_ax.bar(1, on_period_area)
+            inset_ax.bar(2, off_period_area)
 
         fig.tight_layout()
         mng = plt.get_current_fig_manager()
@@ -62,6 +73,36 @@ def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, 
             plt.close(fig)
 
     return period if is_valid else None
+
+
+def period_score(times, values, period, sinwave):
+    """
+
+    :param times:
+    :param values:
+    :param period:
+    :param sinwave:
+    :return:
+    """
+    period_region = sinwave > (np.max(sinwave) / 2)
+
+    on_period_area = integrate.simps(values[period_region], times[period_region])
+    off_period_area = integrate.simps(values[~period_region], times[~period_region])
+
+    # An array of indices of the cutoff points for the period blocks, i.e. where it goes from
+    # "on-period" to "off-period"
+    period_cutoff_indices = np.where(period_region[:-1] != period_region[1:])[0] + 1
+
+    # array([[times],
+    #       [values]])
+    timeseries = np.stack((times, values))
+
+    period_blocks = np.array_split(timeseries, period_cutoff_indices, axis=1)
+
+    on_period_blocks = period_blocks[::2] if period_region[0] else period_blocks[1::2]
+    off_period_blocks = period_blocks[1::2] if period_region[0] else period_blocks[::2]
+
+    return on_period_blocks, off_period_blocks
 
 
 def get_period_hints(times, values, threshold_method='mc', axes=None):
