@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from autoperiod import autoperiod
 from autoperiod.helpers import load_google_trends_csv, load_gpfs_csv
+from autoperiod.plotting import Plotter
 
 if __name__ == '__main__':
     # values = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3] * 100, np.float)
@@ -53,7 +54,7 @@ if __name__ == '__main__':
     # p = autoperiod(times, values, plot=True, verbose_plot=False, delay_show=True)
 
     times, values = np.genfromtxt("tests/data/ub-hpc-writes-6519766.csv", delimiter=' ', unpack=True)
-    autoperiod(times, values, plot=True, delay_show=True)
+    autoperiod(times, values, plotter=Plotter())
 
     # times = np.arange(0, 2, 0.01)
     # values = np.sin(4*np.pi*times)

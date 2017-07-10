@@ -14,63 +14,37 @@ from six.moves import range
 
 
 # TODO: extract plotting logic into class
-def autoperiod(times, values, plot=False, delay_show=False, verbose_plot=False, filename=None, pdfpages=None,
-               title=None,
+def autoperiod(times, values, plotter=None,
                threshold_method='mc',
                **fig_kw):
     if times[0] != 0:
         # convert absolute times to time differences from the start timestamp
         times = times - times[0]
 
-    if plot:
-        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, ncols=1, figsize=(20, 20) if pdfpages or filename else None,
-                                            **fig_kw)
-        if title:
-            ax1.set_title(title)
-
-    hints, periods = get_period_hints(times, values, threshold_method, axes=ax2 if plot else None)
+    hints, periods = get_period_hints(times, values, threshold_method, plotter=plotter)
     acf = autocorrelation(values)
 
     period = None
     is_valid = False
     for i, p in hints:
-        is_valid, period = validate_hint(i, acf, periods, times, axes=ax3 if plot else None,
-                                         plot_only_valid=not verbose_plot)
+        is_valid, period = validate_hint(i, acf, periods, times, plotter=plotter)
         if is_valid:
             break
 
-    if plot:
-        ax1.plot(times, values)
-        ax3.plot(times, acf, '-o', lw=0.5, ms=2, label='Autocorrelation')
-        ax3.legend()
+        # mng = plt.get_current_fig_manager()
+        # mng.resize(*mng.window.maxsize())
+
+    if plotter:
+        plotter.plot_timeseries(times, values)
+        plotter.plot_acf(times, acf)
+
         if period and is_valid:
             phase_shift = times[np.argmax(values)]
             amplitude = np.max(values) / 2
             sinwave = np.cos(2 * np.pi / period * (times - phase_shift)) * amplitude + amplitude
-            ax1.plot(times, sinwave)
+            plotter.plot_sinwave(times, sinwave)
             on_period_blocks, on_period_area, off_period_blocks, off_period_area = period_score(times, values, period, sinwave)
-            inset_ax = inset_axes(ax1, width='10%', height='50%', loc=1, axes_kwargs={
-                'alpha': 0.6,
-                'xticks': (1, 2),
-                'xticklabels': ("on", "off")
-            })
-            # inset_ax.get_yaxis().set_visible(False)
-            inset_ax.bar(1, on_period_area)
-            inset_ax.bar(2, off_period_area)
-
-        fig.tight_layout()
-        mng = plt.get_current_fig_manager()
-        mng.resize(*mng.window.maxsize())
-        if not delay_show:
-            plt.show()
-
-        if pdfpages:
-            pdfpages.savefig(fig, dpi=1200, facecolor=fig.get_facecolor())
-            plt.close(fig)
-
-        if filename:
-            fig.savefig(filename, dpi=1200, format='pdf', facecolor=fig.get_facecolor())
-            plt.close(fig)
+            plotter.plot_area_ratio(on_period_area, off_period_area)
 
     return period if is_valid else None
 
@@ -105,7 +79,7 @@ def period_score(times, values, period, sinwave):
     return on_period_blocks, on_period_area, off_period_blocks, off_period_area
 
 
-def get_period_hints(times, values, threshold_method='mc', axes=None):
+def get_period_hints(times, values, threshold_method='mc', plotter=None):
     np.seterr(invalid="ignore")
 
     permutations = 40
@@ -146,16 +120,13 @@ def get_period_hints(times, values, threshold_method='mc', axes=None):
 
     period_hints = sorted(period_hints, key=lambda per: power[per[0]], reverse=True)
 
-    if axes:
-        axes.plot(periods, power)
-        axes.axhline(power_threshold, color='green', linewidth=1, linestyle='dashed')
-        axes.axvline(time_span / 2, c='purple', linewidth=1, linestyle='dashed')
-        axes.scatter([p for i, p in period_hints], [power[i] for i, p in period_hints], c='red', marker='x')
+    if plotter:
+        plotter.plot_periodogram(periods, power, period_hints, power_threshold, time_span / 2)
 
     return period_hints, periods
 
 
-def validate_hint(period_idx, acf, periods, times, axes=None, plot_all_iterations=False, plot_only_valid=True):
+def validate_hint(period_idx, acf, periods, times, plotter=None):
     acf /= np.max(acf)
     acf *= 100
 
@@ -199,24 +170,33 @@ def validate_hint(period_idx, acf, periods, times, axes=None, plot_all_iteration
     window = acf[search_min:search_max + 1]
     peak_idx = np.argmax(window) + search_min
 
-    if not plot_only_valid:
-        plt.figure()
-        plt.plot(times, acf, '-o', lw=.5, ms=2, label='Autocorrelation')
-        plt.plot(times[search_min:t_split + 1], min_c1 + min_slope1 * times[search_min:t_split + 1], c='r',
-                 label='slope: {}, error: {}'.format(min_slope1, min_stderr1))
-        plt.plot(times[t_split:search_max], min_c2 + min_slope2 * times[t_split:search_max], c='r',
-                 label='slope: {}, error: {}'.format(min_slope2, min_stderr2))
-        plt.scatter(times[t_split], acf[t_split], c='g')
-        plt.legend()
+    if plotter and (valid or plotter.verbose):
+        plotter.plot_acf_validation(
+            times,
+            acf,
+            times[search_min:t_split + 1], min_slope1, min_c1, min_stderr1,
+            times[t_split:search_max + 1], min_slope2, min_c2, min_stderr2,
+            t_split, peak_idx
+        )
 
-    if axes and valid:
-        axes.plot(times[search_min:t_split + 1], min_c1 + min_slope1 * times[search_min:t_split + 1], c='r',
-                  label='slope: {}, error: {}'.format(min_slope1, min_stderr1))
-        axes.plot(times[t_split:search_max], min_c2 + min_slope2 * times[t_split:search_max], c='r',
-                  label='slope: {}, error: {}'.format(min_slope2, min_stderr2))
-        axes.scatter(times[t_split], acf[t_split], c='g', label='{}'.format(times[t_split]))
-        axes.scatter(times[peak_idx], acf[peak_idx], c='y', label='{}'.format(times[peak_idx]))
-        axes.legend()
+    # if not plot_only_valid:
+    #     plt.figure()
+    #     plt.plot(times, acf, '-o', lw=.5, ms=2, label='Autocorrelation')
+    #     plt.plot(times[search_min:t_split + 1], min_c1 + min_slope1 * times[search_min:t_split + 1], c='r',
+    #              label='slope: {}, error: {}'.format(min_slope1, min_stderr1))
+    #     plt.plot(times[t_split:search_max], min_c2 + min_slope2 * times[t_split:search_max], c='r',
+    #              label='slope: {}, error: {}'.format(min_slope2, min_stderr2))
+    #     plt.scatter(times[t_split], acf[t_split], c='g')
+    #     plt.legend()
+    #
+    # if axes and valid:
+    #     axes.plot(times[search_min:t_split + 1], min_c1 + min_slope1 * times[search_min:t_split + 1], c='r',
+    #               label='slope: {}, error: {}'.format(min_slope1, min_stderr1))
+    #     axes.plot(times[t_split:search_max], min_c2 + min_slope2 * times[t_split:search_max], c='r',
+    #               label='slope: {}, error: {}'.format(min_slope2, min_stderr2))
+    #     axes.scatter(times[t_split], acf[t_split], c='g', label='{}'.format(times[t_split]))
+    #     axes.scatter(times[peak_idx], acf[peak_idx], c='y', label='{}'.format(times[peak_idx]))
+    #     axes.legend()
 
     return valid, times[peak_idx]
 
