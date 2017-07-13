@@ -3,10 +3,8 @@ from __future__ import division, print_function, absolute_import
 
 import math
 
-import matplotlib.pyplot as plt
 import numpy as np
 from astropy.stats import LombScargle
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from scipy.signal import fftconvolve
 from scipy.stats import linregress
 from scipy import integrate
@@ -14,9 +12,7 @@ from six.moves import range
 
 
 # TODO: extract plotting logic into class
-def autoperiod(times, values, plotter=None,
-               threshold_method='mc',
-               **fig_kw):
+def autoperiod(times, values, plotter=None, threshold_method='mc', ):
     if times[0] != 0:
         # convert absolute times to time differences from the start timestamp
         times = times - times[0]
@@ -31,19 +27,26 @@ def autoperiod(times, values, plotter=None,
         if is_valid:
             break
 
-        # mng = plt.get_current_fig_manager()
-        # mng.resize(*mng.window.maxsize())
+            # mng = plt.get_current_fig_manager()
+            # mng.resize(*mng.window.maxsize())
+
+
+    sinwave = None
+    score_data = None
+    if period and is_valid:
+        phase_shift = times[np.argmax(values)]
+        amplitude = np.max(values) / 2
+        sinwave = np.cos(2 * np.pi / period * (times - phase_shift)) * amplitude + amplitude
+        score_data = period_score(times, values, period, sinwave)
 
     if plotter:
         plotter.plot_timeseries(times, values)
         plotter.plot_acf(times, acf)
 
         if period and is_valid:
-            phase_shift = times[np.argmax(values)]
-            amplitude = np.max(values) / 2
-            sinwave = np.cos(2 * np.pi / period * (times - phase_shift)) * amplitude + amplitude
             plotter.plot_sinwave(times, sinwave)
-            on_period_blocks, on_period_area, off_period_blocks, off_period_area = period_score(times, values, period, sinwave)
+            on_period_blocks, on_period_area, off_period_blocks, off_period_area = period_score(times, values, period,
+                                                                                                sinwave)
             plotter.plot_area_ratio(on_period_area, off_period_area)
 
     return period if is_valid else None
