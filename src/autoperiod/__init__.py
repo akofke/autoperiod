@@ -1,3 +1,3 @@
 from __future__ import absolute_import
 
-from autoperiod.autoperiod import autoperiod
+from autoperiod.autoperiod import Autoperiod
