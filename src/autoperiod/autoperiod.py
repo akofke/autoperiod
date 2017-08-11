@@ -16,7 +16,7 @@ class Autoperiod(object):
     def __init__(self, times, values, plotter=None, threshold_method='mc', mc_iterations=40, confidence_level=.9):
 
         # convert absolute times to time differences from start timestamp
-        self.times = times
+        self.times = times - times[0] if times[0] != 0 else times
         self.values = values
         self.plotter = plotter
         self.acf = self.autocorrelation(values)
