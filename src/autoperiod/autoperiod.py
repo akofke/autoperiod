@@ -106,6 +106,10 @@ class Autoperiod(object):
         return on_period_area, off_period_area
 
     @property
+    def phase_shift_guess(self):
+        return self.times[np.argmax(self.values)]
+
+    @property
     def threshold_method(self):
         return self._threshold_method
 
