@@ -4,6 +4,7 @@ from __future__ import division, print_function, absolute_import
 import math
 
 import numpy as np
+import scipy
 from astropy.stats import LombScargle
 from scipy.signal import fftconvolve
 from scipy.stats import linregress
@@ -89,6 +90,12 @@ class Autoperiod(object):
         off_period_blocks = period_blocks[1::2] if period_region[0] else period_blocks[::2]
 
         return on_period_blocks, off_period_blocks
+
+    def period_block_areas(self):
+        on_period_blocks, off_period_blocks = self.period_blocks()
+        on_block_areas = np.array([scipy.integrate.trapz(block[1], x=block[0]) for block in on_period_blocks])
+        off_block_areas = np.array([scipy.integrate.trapz(block[1], x=block[0]) for block in off_period_blocks])
+        return on_block_areas, off_block_areas
 
     def period_area(self):
         period_region = self._sinwave > (np.max(self._sinwave) / 2)
