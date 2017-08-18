@@ -4,6 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='autoperiod',
+    version='0.1.0',
     license='MIT',
     packages=find_packages('src'),
     package_dir={'': 'src'},
@@ -13,11 +14,14 @@ setup(
         'numpy',
         'scipy',
         'astropy',
-        'matplotlib'
     ],
 
     tests_require=[
         'pytest',
         'pytest-benchmark'
-    ]
+    ],
+
+    extras_require={
+        'plotting': ['matplotlib']
+    }
 )
