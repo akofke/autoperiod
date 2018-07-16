@@ -122,9 +122,11 @@ class Autoperiod(object):
     def _get_period_hints(self):
         period_hints = []
 
+        total_periods = len(self.periods)
         for i, period in enumerate(self.periods):
             if self.powers[i] > self._power_threshold and self.time_span / 2 > period > 2 * self.time_interval:
-                period_hints.append((i, period))
+                if i < (total_periods - 2) and i > 2:
+                    period_hints.append((i, period))
 
         period_hints = sorted(period_hints, key=lambda p: self.powers[p[0]], reverse=True)
 
